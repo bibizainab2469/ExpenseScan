@@ -1,4 +1,5 @@
 from extractor import extract_expense
+from audit import log_entry
 import chromadb
 
 client = chromadb.PersistentClient(path="./expense_db")
@@ -23,6 +24,7 @@ while True:
         )
         expenses.append(structured)
         print("Stored!")
+        log_entry("EXPENSE_ADDED", structured)
     
     elif choice == "2":
         query = input("Ask: ")
