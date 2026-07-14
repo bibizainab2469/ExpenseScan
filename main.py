@@ -1,9 +1,8 @@
 from extractor import extract_expense
 import chromadb
 
-client = chromadb.Client()
-collection = client.create_collection("expenses")
-
+client = chromadb.PersistentClient(path="./expense_db")
+collection = client.get_or_create_collection("expenses")
 # Store multiple expenses
 expenses = []
 

@@ -30,5 +30,5 @@ def extract_expense(text):
     return json.loads(result.content)
 
 # Test it
-test = "i had a night out with friends, ordered pizza for 900rs"
-print(extract_expense(test))
+#test = "i had a night out with friends, ordered pizza for 900rs"
+#print(extract_expense(test))
