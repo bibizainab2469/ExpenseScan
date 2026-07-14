@@ -1,3 +1,4 @@
+from extractor import extract_expense
 import chromadb
 
 client = chromadb.Client()
@@ -15,9 +16,13 @@ while True:
     
     if choice == "1":
         expense = input("Enter expense: ")
-        id = str(len(expenses) + 1)
-        collection.add(documents=[expense], ids=[id])
-        expenses.append(expense)
+        structured = extract_expense(expense)
+        print(f"Extracted: {structured}")
+        collection.add(
+            documents=[str(structured)],
+            ids=[str(len(expenses) + 1)]
+        )
+        expenses.append(structured)
         print("Stored!")
     
     elif choice == "2":
