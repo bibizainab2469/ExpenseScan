@@ -6,3 +6,4 @@ __pycache__/
 .env
 expense_db/
 audit_log.json
+expenses.db
