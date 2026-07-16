@@ -4,6 +4,10 @@ import json
 from datetime import date
 from dotenv import load_dotenv
 import os
+import chromadb
+
+chroma_client = chromadb.PersistentClient(path="./expense_db")
+collection = chroma_client.get_or_create_collection("expenses")
 
 today = date.today().strftime("%Y-%m-%d")
 load_dotenv()
@@ -15,13 +19,12 @@ llm = ChatGroq(
 )
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", """Extract expense details from user message and return ONLY a JSON object with these fields:
-    - amount (number)
-    - category (Food/Transport/Shopping/Health/Entertainment/Other)
+    ("system", """Extract expense details and return ONLY a JSON object:
+    - amount (number only)
+    - category (must be exactly one of: Food/Transport/Shopping/Health/Entertainment/Materials/Labor/Utilities/Medical/Other)
     - description (brief)
-    - date (today if not mentioned, format YYYY-MM-DD)
-    - If no specific date is mentioned, use today's date: {{today}}
-    Return ONLY the JSON. No explanation."""),
+    - date (MUST be in YYYY-MM-DD format only. Today is {today}. If no date mentioned use today.)
+    Return ONLY valid JSON. No explanation. No markdown."""),
     ("human", "{text}")
 ])
 
@@ -34,6 +37,25 @@ def extract_expense(text):
         data["date"] = today
     return data
 
+def query_expenses(question):
+    results = collection.query(query_texts=[question], n_results=5)
+    context = "\n".join(results['documents'][0])
+    
+    prompt = f"""You are an expense tracking assistant.
+Here are relevant expense records:
+{context}
+
+Answer this question: {question}"""
+    
+    response = llm.invoke(prompt)
+    return response.content
 # Test it
 #test = "i had a night out with friends, ordered pizza for 900rs"
 #print(extract_expense(test))
+
+def save_to_chroma(expense_text, metadata):
+    collection.add(
+        documents=[expense_text],
+        metadatas=[metadata],
+        ids=[str(metadata.get("id", expense_text[:10]))]
+    )

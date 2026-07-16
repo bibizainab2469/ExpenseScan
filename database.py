@@ -1,30 +1,34 @@
 import sqlite3
 
+DB_PATH = "expenses.db"
 
-connection = sqlite3.connect("expenses.db")
-cursor = connection.cursor()
-    
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS expenses (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        Date DATE NOT NULL,
-        Category TEXT,
-        Amount INTEGER NOT NULL,
-        Description STR
-    )
-""")
-
-# 4. Save changes
-connection.commit()
-
-print("Table created successfully!")
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            Date DATE NOT NULL,
+            Category TEXT,
+            Amount INTEGER NOT NULL,
+            Description TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 def insert_expense(date, amount, category, description):
-    cursor.execute("INSERT INTO expenses (Date, Amount, Category, Description) VALUES (?, ?, ?, ?)", (date, amount, category, description))
-    connection.commit()
-    
-def get_all_expenses():
-    cursor.execute("SELECT * FROM expenses")
-    return cursor.fetchall()
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("INSERT INTO expenses (Date, Amount, Category, Description) VALUES (?, ?, ?, ?)", 
+                 (date, amount, category, description))
+    conn.commit()
+    conn.close()
 
-print(get_all_expenses())
+def get_all_expenses():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.execute("SELECT * FROM expenses")
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return results
+
+init_db()
