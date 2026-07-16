@@ -2,10 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from extractor import extract_expense
 from database import insert_expense, get_all_expenses
 from audit import log_entry
 from extractor import extract_expense, query_expenses, save_to_chroma
+from fastapi.responses import FileResponse
+from exporter import get_filtered_expenses, generate_excel, generate_pdf
 
 app = FastAPI()
 
@@ -69,5 +70,36 @@ def query(request: QueryRequest):
     try:
         answer = query_expenses(request.question)
         return {"success": True, "data": {"answer": answer}}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+@app.get("/expenses/export/excel")
+def export_excel(
+    month: str = None, 
+    year: str = None, 
+    category: str = None,
+    filename: str = "kharcha_export"
+):
+    try:
+        expenses = get_filtered_expenses(month=month, year=year, category=category)
+        output_file = generate_excel(expenses, filename=f"{filename}.xlsx")
+        return FileResponse(
+            output_file,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            filename=f"{filename}.xlsx"
+        )
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+    
+@app.get("/expenses/export/pdf")
+def export_pdf(month: str = None, year: str = None, category: str = None, filename: str = "kharcha_export"):
+    try:
+        expenses = get_filtered_expenses(month=month, year=year, category=category)
+        output_file = generate_pdf(expenses, filename=f"{filename}.pdf")
+        return FileResponse(
+            output_file,
+            media_type="application/pdf",
+            filename=f"{filename}.pdf"
+        )
     except Exception as e:
         return {"success": False, "error": str(e)}
