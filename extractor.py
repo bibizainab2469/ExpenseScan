@@ -1,5 +1,6 @@
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
+from groq import Groq
 import json
 from datetime import date
 from dotenv import load_dotenv
@@ -17,6 +18,15 @@ llm = ChatGroq(
     api_key=key,
     model="llama-3.1-8b-instant"
 )
+
+groq_client = Groq(api_key=key)
+
+def transcribe_audio(file_bytes, filename):
+    result = groq_client.audio.transcriptions.create(
+        model="whisper-large-v3-turbo",
+        file=(filename, file_bytes)
+    )
+    return result.text
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """Extract expense details and return ONLY a JSON object:
@@ -59,3 +69,7 @@ def save_to_chroma(expense_text, metadata):
         metadatas=[metadata],
         ids=[str(metadata.get("id", expense_text[:10]))]
     )
+    
+def extract_from_voice(file_bytes, filename):
+    text = transcribe_audio(file_bytes, filename)
+    return extract_expense(text)

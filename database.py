@@ -7,10 +7,11 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            Date DATE NOT NULL,
-            Category TEXT,
-            Amount INTEGER NOT NULL,
-            Description TEXT
+            date DATE NOT NULL,
+            category TEXT,
+            amount REAL NOT NULL,
+            vendor TEXT,
+            description TEXT
         )
     """)
     conn.commit()

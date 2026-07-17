@@ -1,12 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
 from database import insert_expense, get_all_expenses
 from audit import log_entry
-from extractor import extract_expense, query_expenses, save_to_chroma
+from extractor import extract_expense, query_expenses, save_to_chroma, extract_from_voice
 from fastapi.responses import FileResponse
 from exporter import get_filtered_expenses, generate_excel, generate_pdf
+import asyncio
 
 app = FastAPI()
 
@@ -35,15 +36,25 @@ class QueryRequest(BaseModel):
     question: str
 
 # Endpoints
+from fastapi import File, UploadFile, Form
+import os
+
 @app.post("/expenses/extract")
-def extract(request: ExtractRequest):
+async def extract(
+    input_type: str = Form(...),
+    content: str = Form(None),
+    file: UploadFile = File(None)
+):
     try:
-        result = extract_expense(request.content)
+        if input_type == "text":
+            result = extract_expense(content)
+        elif input_type == "voice":
+            file_bytes = await file.read()
+            result = extract_from_voice(file_bytes, file.filename)
         return {"success": True, "data": result}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-@app.post("/expenses/add")
 @app.post("/expenses/add")
 def add_expense(request: AddRequest):
     try:
