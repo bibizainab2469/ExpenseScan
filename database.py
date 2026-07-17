@@ -17,10 +17,10 @@ def init_db():
     conn.commit()
     conn.close()
 
-def insert_expense(date, amount, category, description):
+def insert_expense(date, amount, category, vendor, description):
     conn = sqlite3.connect(DB_PATH)
-    conn.execute("INSERT INTO expenses (Date, Amount, Category, Description) VALUES (?, ?, ?, ?)", 
-                 (date, amount, category, description))
+    conn.execute("INSERT INTO expenses (date, amount, category, vendor, description) VALUES (?, ?, ?, ?, ?)", 
+                 (date, amount, category, vendor, description))
     conn.commit()
     conn.close()
 

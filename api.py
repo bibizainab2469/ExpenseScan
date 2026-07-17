@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional
 from database import insert_expense, get_all_expenses
 from audit import log_entry
-from extractor import extract_expense, query_expenses, save_to_chroma, extract_from_voice
+from extractor import extract_expense, query_expenses, save_to_chroma, extract_from_voice, extract_from_image
 from fastapi.responses import FileResponse
 from exporter import get_filtered_expenses, generate_excel, generate_pdf
 import asyncio
@@ -48,6 +48,9 @@ async def extract(
     try:
         if input_type == "text":
             result = extract_expense(content)
+        elif input_type == "image":
+            file_bytes = await file.read()
+            result = extract_from_image(file_bytes)
         elif input_type == "voice":
             file_bytes = await file.read()
             result = extract_from_voice(file_bytes, file.filename)
@@ -58,7 +61,7 @@ async def extract(
 @app.post("/expenses/add")
 def add_expense(request: AddRequest):
     try:
-        insert_expense(request.date, request.amount, request.category, request.description)
+        insert_expense(request.date, request.amount, request.category,request.vendor, request.description)
         save_to_chroma(
             f"Date: {request.date}. Amount: {request.amount}. Category: {request.category}. Description: {request.description}",
             {"date": request.date, "amount": request.amount, "category": request.category}

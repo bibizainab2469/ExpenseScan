@@ -1,6 +1,7 @@
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from groq import Groq
+import base64
 import json
 from datetime import date
 from dotenv import load_dotenv
@@ -27,6 +28,46 @@ def transcribe_audio(file_bytes, filename):
         file=(filename, file_bytes)
     )
     return result.text
+
+def extract_from_image(file_bytes):
+    base64_image = base64.b64encode(file_bytes).decode('utf-8')
+    
+    response = groq_client.chat.completions.create(
+        model="meta-llama/llama-4-scout-17b-16e-instruct",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    },
+                    {
+                        "type": "text",
+                        "text": f"""Extract expense details from this receipt image and return ONLY a JSON object:
+- amount (number only)
+- category (must be exactly one of: Food/Transport/Shopping/Health/Entertainment/Materials/Labor/Utilities/Medical/Other)
+- vendor (shop or person name)
+- description (brief)
+- date (MUST be in YYYY-MM-DD format. Today is {today}. If no date visible use today.)
+Return ONLY valid JSON. No explanation. No markdown."""
+                    }
+                ]
+            }
+        ]
+    )
+    
+    raw = response.choices[0].message.content.strip()
+    
+    # Clean markdown if present
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    
+    return json.loads(raw.strip())
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """Extract expense details and return ONLY a JSON object:
