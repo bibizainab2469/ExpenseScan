@@ -21,15 +21,15 @@ def get_filtered_expenses(month=None, year=None, category=None):
     params = []
     
     if month:
-        query += " AND strftime('%m', Date) = ?"
+        query += " AND strftime('%m', date) = ?"
         params.append(str(month).zfill(2))
     
     if year:
-        query += " AND strftime('%Y', Date) = ?"
+        query += " AND strftime('%Y', date) = ?"
         params.append(str(year))
     
     if category:
-        query += " AND Category = ?"
+        query += " AND category = ?"
         params.append(category)
     
     cursor = conn.execute(query, params)
@@ -57,11 +57,11 @@ def generate_excel(expenses, filename="kharcha_export.xlsx"):
     total = 0
     for row_num, expense in enumerate(expenses, 2):
         ws.cell(row=row_num, column=1, value=row_num-1)
-        ws.cell(row=row_num, column=2, value=expense.get("Date"))
-        ws.cell(row=row_num, column=3, value=expense.get("Category"))
-        amount = expense.get("Amount", 0)
+        ws.cell(row=row_num, column=2, value=expense.get("date"))
+        ws.cell(row=row_num, column=3, value=expense.get("category"))
+        amount = expense.get("amount", 0)
         ws.cell(row=row_num, column=4, value=amount)
-        ws.cell(row=row_num, column=5, value=expense.get("Description"))
+        ws.cell(row=row_num, column=5, value=expense.get("description"))
         total += amount
     
     # Total row
@@ -94,13 +94,13 @@ def generate_pdf(expenses, filename="kharcha_export.pdf"):
     total = 0
     
     for i, expense in enumerate(expenses, 1):
-        amount = expense.get("Amount", 0)
+        amount = expense.get("amount", 0)
         data.append([
             str(i),
-            expense.get("Date", ""),
-            expense.get("Category", ""),
+            expense.get("date", ""),
+            expense.get("category", ""),
             f"Rs. {amount:,}",
-            expense.get("Description", "")
+            expense.get("description", "")
         ])
         total += amount
     

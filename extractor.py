@@ -7,8 +7,9 @@ from datetime import date
 from dotenv import load_dotenv
 import os
 import chromadb
+import uuid
 
-chroma_client = chromadb.PersistentClient(path="./expense_db")
+chroma_client = chromadb.PersistentClient(path=os.getenv("CHROMA_DB_PATH", "./expense_db"))
 collection = chroma_client.get_or_create_collection("expenses")
 
 today = date.today().strftime("%Y-%m-%d")
@@ -47,12 +48,12 @@ def extract_from_image(file_bytes):
                     {
                         "type": "text",
                         "text": f"""Extract expense details from this receipt image and return ONLY a JSON object:
-- amount (number only)
-- category (must be exactly one of: Food/Transport/Shopping/Health/Entertainment/Materials/Labor/Utilities/Medical/Other)
-- vendor (shop or person name)
-- description (brief)
-- date (MUST be in YYYY-MM-DD format. Today is {today}. If no date visible use today.)
-Return ONLY valid JSON. No explanation. No markdown."""
+                            - amount (number only)
+                            - category (must be exactly one of: Food/Transport/Shopping/Health/Entertainment/Materials/Labor/Utilities/Medical/Other)
+                            - vendor (shop or person name)
+                            - description (brief)
+                            - date (MUST be in YYYY-MM-DD format. Today is {today}. If no date visible use today.)
+                            Return ONLY valid JSON. No explanation. No markdown."""
                     }
                 ]
             }
@@ -74,7 +75,11 @@ prompt = ChatPromptTemplate.from_messages([
     - amount (number only)
     - category (must be exactly one of: Food/Transport/Shopping/Health/Entertainment/Materials/Labor/Utilities/Medical/Other)
     - description (brief)
-    - date (MUST be in YYYY-MM-DD format only. Today is {today}. If no date mentioned use today.)
+    - vendor (shop name or person paid, null if not mentioned)
+    - date (MUST be in YYYY-MM-DD format only. Today is {today}. If no date mentioned use today.
+    - confidence (object with keys: amount, category, vendor, date, description — each value must be "high", "medium", or "low")
+    - confidence (object with keys: amount, category, vendor, date, description — each value must be "high", "medium", or "low"))
+    
     Return ONLY valid JSON. No explanation. No markdown."""),
     ("human", "{text}")
 ])
@@ -108,7 +113,7 @@ def save_to_chroma(expense_text, metadata):
     collection.add(
         documents=[expense_text],
         metadatas=[metadata],
-        ids=[str(metadata.get("id", expense_text[:10]))]
+        ids=[str(uuid.uuid4())]
     )
     
 def extract_from_voice(file_bytes, filename):
