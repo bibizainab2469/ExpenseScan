@@ -1,11 +1,11 @@
-from langchain_groq import ChatGroq
-from langchain_core.prompts import ChatPromptTemplate
-from groq import Groq
-import base64
-import json
-from datetime import date
 from dotenv import load_dotenv
 import os
+load_dotenv()
+
+from langchain_groq import ChatGroq
+from langchain_core.prompts import ChatPromptTemplate
+import json
+from datetime import date
 import chromadb
 import uuid
 
@@ -13,62 +13,12 @@ chroma_client = chromadb.PersistentClient(path=os.getenv("CHROMA_DB_PATH", "./ex
 collection = chroma_client.get_or_create_collection("expenses")
 
 today = date.today().strftime("%Y-%m-%d")
-load_dotenv()
 key = os.getenv("GROQ_API_KEY")
 
 llm = ChatGroq(
     api_key=key,
     model="llama-3.1-8b-instant"
 )
-
-groq_client = Groq(api_key=key)
-
-def transcribe_audio(file_bytes, filename):
-    result = groq_client.audio.transcriptions.create(
-        model="whisper-large-v3-turbo",
-        file=(filename, file_bytes)
-    )
-    return result.text
-
-def extract_from_image(file_bytes):
-    base64_image = base64.b64encode(file_bytes).decode('utf-8')
-    
-    response = groq_client.chat.completions.create(
-        model="meta-llama/llama-4-scout-17b-16e-instruct",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}"
-                        }
-                    },
-                    {
-                        "type": "text",
-                        "text": f"""Extract expense details from this receipt image and return ONLY a JSON object:
-                            - amount (number only)
-                            - category (must be exactly one of: Food/Transport/Shopping/Health/Entertainment/Materials/Labor/Utilities/Medical/Other)
-                            - vendor (shop or person name)
-                            - description (brief)
-                            - date (MUST be in YYYY-MM-DD format. Today is {today}. If no date visible use today.)
-                            Return ONLY valid JSON. No explanation. No markdown."""
-                    }
-                ]
-            }
-        ]
-    )
-    
-    raw = response.choices[0].message.content.strip()
-    
-    # Clean markdown if present
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-    
-    return json.loads(raw.strip())
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """Extract expense details and return ONLY a JSON object:
@@ -77,7 +27,6 @@ prompt = ChatPromptTemplate.from_messages([
     - description (brief)
     - vendor (shop name or person paid, null if not mentioned)
     - date (MUST be in YYYY-MM-DD format only. Today is {today}. If no date mentioned use today.
-    - confidence (object with keys: amount, category, vendor, date, description — each value must be "high", "medium", or "low")
     - confidence (object with keys: amount, category, vendor, date, description — each value must be "high", "medium", or "low"))
     
     Return ONLY valid JSON. No explanation. No markdown."""),
@@ -116,6 +65,3 @@ def save_to_chroma(expense_text, metadata):
         ids=[str(uuid.uuid4())]
     )
     
-def extract_from_voice(file_bytes, filename):
-    text = transcribe_audio(file_bytes, filename)
-    return extract_expense(text)

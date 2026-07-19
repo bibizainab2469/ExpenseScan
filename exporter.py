@@ -9,7 +9,10 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 
-DB_PATH = "expenses.db"
+from dotenv import load_dotenv
+import os
+load_dotenv()
+DB_PATH = os.getenv("SQLITE_DB_PATH", "./expenses.db")
 
 # for excel 
 

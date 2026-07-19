@@ -47,7 +47,6 @@ def get_filtered_expenses_db(view=None, date=None, month=None, year=None):
         params.append(date)
         
     elif view == "weekly" and date:
-        conn2 = sqlite3.connect(DB_PATH)
         # Get the week start (Monday) and end (Sunday) for the given date
         from datetime import datetime, timedelta
         d = datetime.strptime(date, "%Y-%m-%d")
@@ -116,6 +115,19 @@ def get_monthly_totals(year=None):
     conn.close()
     return results
 
+def get_monthly_totals_for_period(start_date):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    query = """SELECT strftime('%m', date) as month, 
+               strftime('%Y', date) as year,
+               SUM(amount) as total 
+               FROM expenses WHERE date >= ?
+               GROUP BY year, month ORDER BY year, month"""
+    cursor = conn.execute(query, (start_date,))
+    results = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return results
+
 def get_all_expenses():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -124,4 +136,10 @@ def get_all_expenses():
     conn.close()
     return results
 
+def delete_expense(expense_id):
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+    conn.commit()
+    conn.close()
+    
 init_db()

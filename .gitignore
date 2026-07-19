@@ -5,7 +5,6 @@ __pycache__/
 *.pyc
 .env
 expense_db/
-audit_log.json
 expenses.db
 kharcha_export.xlsx
 kharcha_export.pdf
