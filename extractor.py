@@ -21,7 +21,7 @@ llm = ChatGroq(
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """Extract expense details and return ONLY a JSON object:
-    - amount (number only)
+    - amount (number only), default is pkr rupee, if not mentioned, use default
     - category (must be exactly one of: Food/Transport/Shopping/Health/Entertainment/Materials/Labor/Utilities/Medical/Other)
     - description (brief)
     - vendor (shop name or person paid, null if not mentioned)
