@@ -12,7 +12,6 @@ import uuid
 chroma_client = chromadb.PersistentClient(path=os.getenv("CHROMA_DB_PATH", "./expense_db"))
 collection = chroma_client.get_or_create_collection("expenses")
 
-today = date.today().strftime("%Y-%m-%d")
 key = os.getenv("GROQ_API_KEY")
 
 llm = ChatGroq(
@@ -36,6 +35,7 @@ prompt = ChatPromptTemplate.from_messages([
 chain = prompt | llm
 
 def extract_expense(text):
+    today = date.today().strftime("%Y-%m-%d") 
     result = chain.invoke({"text": text, "today": today})
     data = json.loads(result.content)
     if "date" not in data or not data["date"]:

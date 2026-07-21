@@ -131,7 +131,7 @@ def get_monthly_totals_for_period(start_date):
 def get_all_expenses():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    cursor = conn.execute("SELECT * FROM expenses")
+    cursor = conn.execute("SELECT * FROM expenses ORDER BY date DESC, created_at DESC")
     results = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return results
