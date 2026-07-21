@@ -5,7 +5,7 @@ load_dotenv()
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 import json
-from datetime import date
+from datetime import datetime, timezone, timedelta
 import chromadb
 import uuid
 
@@ -35,7 +35,8 @@ prompt = ChatPromptTemplate.from_messages([
 chain = prompt | llm
 
 def extract_expense(text):
-    today = date.today().strftime("%Y-%m-%d") 
+    pakistan_tz = timezone(timedelta(hours=5))
+    today = datetime.now(pakistan_tz).strftime("%Y-%m-%d")
     result = chain.invoke({"text": text, "today": today})
     data = json.loads(result.content)
     if "date" not in data or not data["date"]:
